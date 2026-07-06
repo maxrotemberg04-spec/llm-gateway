@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LLM Gateway - Mission Control</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"></span>
+        <div>
+          <h1>LLM Gateway</h1>
+          <p>Mission Control</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span id="mode" class="badge">...</span>
+        <span id="ks-pill" class="badge">...</span>
+      </div>
+    </header>
+
+    <div id="ks-banner" class="banner hidden">Kill-switch active. All traffic is blocked until the cap is raised or disabled.</div>
+
+    <section class="kpis">
+      <div class="kpi"><span class="kpi-label">Requests</span><span id="k-req" class="kpi-num">-</span></div>
+      <div class="kpi"><span class="kpi-label">Spend</span><span id="k-cost" class="kpi-num green">-</span></div>
+      <div class="kpi"><span class="kpi-label">Active users</span><span id="k-users" class="kpi-num">-</span></div>
+      <div class="kpi"><span class="kpi-label">Served / Blocked</span><span id="k-sb" class="kpi-num">-</span></div>
+    </section>
+
+    <section class="grid">
+      <div class="card span2">
+        <div class="card-head"><h2>Traffic over time</h2><span class="hint">requests per bucket</span></div>
+        <div id="chart" class="chart-box"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Model routing</h2></div>
+        <div id="models" class="bars"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Kill-switch</h2></div>
+        <div id="ks" class="ks"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Rate limits</h2><span class="hint">per user</span></div>
+        <div id="limits" class="bars"></div>
+      </div>
+
+      <div class="card span2">
+        <div class="card-head"><h2>Recent requests</h2></div>
+        <div class="table-scroll">
+          <table id="recent"><thead><tr>
+            <th>time</th><th>user</th><th>model</th><th class="r">in</th><th class="r">out</th><th class="r">cost</th><th>status</th>
+          </tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <div class="card span2">
+        <div class="card-head"><h2>Send a request</h2><span class="hint">hits the live gateway</span></div>
+        <div class="tester">
+          <div class="field"><label for="t-prompt">Prompt</label>
+            <input id="t-prompt" value="Give me a 5K tempo workout." /></div>
+          <div class="row3">
+            <div class="field"><label for="t-user">User</label><input id="t-user" value="maria" /></div>
+            <div class="field"><label for="t-tier">Model</label>
+              <select id="t-tier"><option value="strong">strong (Sonnet)</option><option value="cheap">cheap (Haiku)</option></select></div>
+            <div class="field"><label for="t-plan">Plan</label>
+              <select id="t-plan"><option value="free">free</option><option value="pro" selected>pro</option></select></div>
+          </div>
+          <div class="actions">
+            <button id="send" class="btn">Send request</button>
+            <button id="sim" class="btn ghost">Simulate traffic</button>
+          </div>
+          <pre id="t-out" class="out hidden"></pre>
+        </div>
+      </div>
+    </section>
+    <footer class="foot">Standalone build of my production app's Supabase AI proxy. Mock data by default. <span class="mono">github.com/maxrotemberg04-spec</span></footer>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
