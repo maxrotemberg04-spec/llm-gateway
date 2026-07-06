@@ -1,8 +1,9 @@
 """LLM Gateway — a proxy in front of the LLM API, with a live dashboard.
 
 Pipeline per request:  kill-switch -> rate-limit -> route model -> call (w/ fallback)
--> record cost. The dashboard reads the metrics endpoints.
+-> record cost + latency. The dashboard reads the metrics endpoints.
 """
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -16,7 +17,18 @@ from .ratelimit import limiter
 from . import metrics, state
 
 STATIC = Path(__file__).resolve().parent.parent / "static"
-app = FastAPI(title="LLM Gateway")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    metrics.seed_demo()                 # dashboard opens with live-looking mock data
+    for user, n in [("maria", 22), ("devon", 14), ("priya", 8), ("sam", 5)]:
+        for _ in range(n):
+            limiter.check(user, "pro")  # seed the rate-limit panel
+    yield
+
+
+app = FastAPI(title="LLM Gateway", lifespan=lifespan)
 
 
 class ChatRequest(BaseModel):
@@ -32,14 +44,6 @@ class KillswitchUpdate(BaseModel):
     cap_usd: float | None = None
 
 
-@app.on_event("startup")
-def _startup():
-    metrics.seed_demo()                # so the dashboard opens with live-looking data
-    for user, n in [("maria", 22), ("devon", 14), ("priya", 8), ("sam", 5)]:
-        for _ in range(n):
-            limiter.check(user, "pro")  # seed rate-limit usage for the panel
-
-
 @app.get("/health")
 def health():
     return {"ok": True, "mode": "live" if _has_key() else "mock"}
@@ -51,25 +55,26 @@ def chat(req: ChatRequest):
 
     # 1. kill-switch: stop everything if the monthly spend cap is reached.
     if state.tripped(metrics.total_spend()):
-        metrics.record(req.user_id, req.plan, tier, MODELS[tier], 0, 0, "killswitch")
+        metrics.record(req.user_id, req.plan, tier, MODELS[tier], 0, 0, 0, "killswitch")
         return {"status": "blocked", "error": "kill-switch active: spend cap reached"}
 
     # 2. rate limit this user.
     rl = limiter.check(req.user_id, req.plan)
     if not rl["allowed"]:
-        metrics.record(req.user_id, req.plan, tier, MODELS[tier], 0, 0, "rate_limited")
+        metrics.record(req.user_id, req.plan, tier, MODELS[tier], 0, 0, 0, "rate_limited")
         return {"status": "rate_limited", "error": "rate limit exceeded", "rate_limit": rl}
 
-    # 3. route + call (with fallback on error) + record cost.
-    used_tier, reply, in_tok, out_tok = call_with_fallback(tier, req.prompt, req.system)
+    # 3. route + call (with fallback on error) + record cost and latency.
+    used_tier, reply, in_tok, out_tok, ms = call_with_fallback(tier, req.prompt, req.system)
     model = MODELS[used_tier]
-    usd = metrics.record(req.user_id, req.plan, used_tier, model, in_tok, out_tok, "ok")
+    usd = metrics.record(req.user_id, req.plan, used_tier, model, in_tok, out_tok, ms, "ok")
     return {
         "status": "ok",
         "reply": reply,
         "model": model["id"],
         "tier": used_tier,
         "tokens": {"in": in_tok, "out": out_tok},
+        "latency_ms": int(ms),
         "cost_usd": round(usd, 6),
         "rate_limit": rl,
     }

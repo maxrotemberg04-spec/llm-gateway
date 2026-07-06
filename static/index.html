@@ -8,81 +8,141 @@
 </head>
 <body>
   <div class="wrap">
+
     <header class="topbar">
       <div class="brand">
-        <span class="logo" aria-hidden="true"></span>
+        <div class="logo" aria-hidden="true"><span></span></div>
         <div>
           <h1>LLM Gateway</h1>
           <p>Mission Control</p>
         </div>
       </div>
       <div class="topbar-right">
-        <span id="mode" class="badge">...</span>
-        <span id="ks-pill" class="badge">...</span>
+        <span class="live"><span class="dot" aria-hidden="true"></span><span id="updated">connecting</span></span>
+        <span id="mode" class="badge">&nbsp;</span>
+        <span id="ks-pill" class="badge">&nbsp;</span>
       </div>
     </header>
 
-    <div id="ks-banner" class="banner hidden">Kill-switch active. All traffic is blocked until the cap is raised or disabled.</div>
+    <div id="ks-banner" class="banner hidden" role="alert">
+      Kill-switch tripped. All traffic is blocked until the cap is raised or the switch is disabled.
+    </div>
 
-    <section class="kpis">
-      <div class="kpi"><span class="kpi-label">Requests</span><span id="k-req" class="kpi-num">-</span></div>
-      <div class="kpi"><span class="kpi-label">Spend</span><span id="k-cost" class="kpi-num green">-</span></div>
-      <div class="kpi"><span class="kpi-label">Active users</span><span id="k-users" class="kpi-num">-</span></div>
-      <div class="kpi"><span class="kpi-label">Served / Blocked</span><span id="k-sb" class="kpi-num">-</span></div>
+    <section class="kpis" aria-label="key metrics">
+      <article class="kpi">
+        <header>Requests</header>
+        <div class="kpi-main"><span id="k-req" class="kpi-num skel">&nbsp;</span></div>
+        <div id="k-req-spark" class="spark"></div>
+      </article>
+      <article class="kpi">
+        <header>Spend</header>
+        <div class="kpi-main"><span id="k-cost" class="kpi-num green skel">&nbsp;</span></div>
+        <div id="k-cost-spark" class="spark"></div>
+      </article>
+      <article class="kpi">
+        <header>Latency p50 / p95</header>
+        <div class="kpi-main"><span id="k-lat" class="kpi-num skel">&nbsp;</span></div>
+        <div class="kpi-sub" id="k-lat-sub">&nbsp;</div>
+      </article>
+      <article class="kpi">
+        <header>Active users</header>
+        <div class="kpi-main"><span id="k-users" class="kpi-num skel">&nbsp;</span></div>
+        <div class="kpi-sub" id="k-users-sub">&nbsp;</div>
+      </article>
+      <article class="kpi">
+        <header>Served / Blocked</header>
+        <div class="kpi-main"><span id="k-sb" class="kpi-num skel">&nbsp;</span></div>
+        <div class="kpi-sub" id="k-sb-sub">&nbsp;</div>
+      </article>
     </section>
 
     <section class="grid">
-      <div class="card span2">
-        <div class="card-head"><h2>Traffic over time</h2><span class="hint">requests per bucket</span></div>
+
+      <div class="card c8">
+        <div class="card-head">
+          <h2>Traffic</h2>
+          <div class="legend">
+            <span class="key"><i class="swatch blue"></i>requests</span>
+            <span class="key"><i class="swatch green"></i>spend</span>
+          </div>
+        </div>
         <div id="chart" class="chart-box"></div>
       </div>
 
-      <div class="card">
+      <div class="card c4">
         <div class="card-head"><h2>Model routing</h2></div>
-        <div id="models" class="bars"></div>
+        <div id="donut" class="donut-box"></div>
+        <div id="donut-legend" class="donut-legend"></div>
       </div>
 
-      <div class="card">
-        <div class="card-head"><h2>Kill-switch</h2></div>
+      <div class="card c4">
+        <div class="card-head"><h2>Kill-switch</h2><span id="ks-state" class="chip">&nbsp;</span></div>
         <div id="ks" class="ks"></div>
       </div>
 
-      <div class="card">
-        <div class="card-head"><h2>Rate limits</h2><span class="hint">per user</span></div>
+      <div class="card c4">
+        <div class="card-head"><h2>Rate limits</h2><span class="hint">requests used per window</span></div>
         <div id="limits" class="bars"></div>
       </div>
 
-      <div class="card span2">
-        <div class="card-head"><h2>Recent requests</h2></div>
+      <div class="card c4">
+        <div class="card-head"><h2>Top spend</h2><span class="hint">by user</span></div>
+        <div id="spenders" class="bars"></div>
+      </div>
+
+      <div class="card c8">
+        <div class="card-head"><h2>Recent requests</h2><span class="hint">latest 14</span></div>
         <div class="table-scroll">
-          <table id="recent"><thead><tr>
-            <th>time</th><th>user</th><th>model</th><th class="r">in</th><th class="r">out</th><th class="r">cost</th><th>status</th>
-          </tr></thead><tbody></tbody></table>
+          <table id="recent">
+            <thead><tr>
+              <th>time</th><th>user</th><th>model</th>
+              <th class="r">tokens</th><th class="r">latency</th><th class="r">cost</th><th>status</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
         </div>
       </div>
 
-      <div class="card span2">
-        <div class="card-head"><h2>Send a request</h2><span class="hint">hits the live gateway</span></div>
+      <div class="card c4">
+        <div class="card-head"><h2>Console</h2><span class="hint">hits the live gateway</span></div>
         <div class="tester">
-          <div class="field"><label for="t-prompt">Prompt</label>
-            <input id="t-prompt" value="Give me a 5K tempo workout." /></div>
-          <div class="row3">
-            <div class="field"><label for="t-user">User</label><input id="t-user" value="maria" /></div>
-            <div class="field"><label for="t-tier">Model</label>
-              <select id="t-tier"><option value="strong">strong (Sonnet)</option><option value="cheap">cheap (Haiku)</option></select></div>
-            <div class="field"><label for="t-plan">Plan</label>
-              <select id="t-plan"><option value="free">free</option><option value="pro" selected>pro</option></select></div>
+          <div class="field">
+            <label for="t-prompt">Prompt</label>
+            <input id="t-prompt" value="Give me a 5K tempo workout." autocomplete="off" />
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="t-user">User</label>
+              <input id="t-user" value="maria" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="t-plan">Plan</label>
+              <select id="t-plan"><option value="free">free</option><option value="pro" selected>pro</option></select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="t-tier">Model tier</label>
+            <select id="t-tier">
+              <option value="strong">strong - Sonnet</option>
+              <option value="cheap">cheap - Haiku</option>
+            </select>
           </div>
           <div class="actions">
-            <button id="send" class="btn">Send request</button>
+            <button id="send" class="btn">Send</button>
             <button id="sim" class="btn ghost">Simulate traffic</button>
           </div>
           <pre id="t-out" class="out hidden"></pre>
         </div>
       </div>
+
     </section>
-    <footer class="foot">Standalone build of my production app's Supabase AI proxy. Mock data by default. <span class="mono">github.com/maxrotemberg04-spec</span></footer>
+
+    <footer class="foot">
+      Standalone build of my production app's AI proxy. Mock data until an API key is set.
+      <span class="mono">github.com/maxrotemberg04-spec/llm-gateway</span>
+    </footer>
   </div>
+
   <script src="/static/app.js"></script>
 </body>
 </html>
