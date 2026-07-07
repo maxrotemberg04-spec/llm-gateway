@@ -6,7 +6,7 @@
 
 A **gateway in front of the LLM API** — the infrastructure layer that makes AI apps affordable and safe to run: per-user rate limiting, cheap/strong model routing, token-cost accounting, latency tracking, fallback, and a global kill-switch. All watched from a live dashboard.
 
-It's a standalone build of **my production app's** production AI proxy (an AI running coach) — the same design that runs in its Supabase edge functions.
+It's the same design that sits in front of a real production AI product — the proxy layer, built standalone and readable.
 
 ![Mission Control dashboard](docs/dashboard.png)
 
@@ -76,5 +76,5 @@ Covers: model routing + pricing, free-tier rate limit tripping, kill-switch bloc
 - [ ] Streaming responses (SSE pass-through)
 - [ ] Per-model daily budgets
 
-## How it maps to my production app
-my production app's backend spec locks the same decisions this repo implements: an AI proxy that owns the prompts, per-plan rate limits (5/week free, ~30/day pro), Sonnet/Haiku routing, token-cost rows feeding a Mission Control view, and a global monthly kill-switch. This repo is that system, standalone and readable.
+## Design decisions
+A production AI product needs the same set of decisions this repo implements: a proxy that owns the prompts and API key, per-plan rate limits (e.g. 5/week free, ~30/day pro), cheap/strong model routing, token-cost rows feeding a dashboard, and a global monthly kill-switch. This repo is that system, standalone and readable.

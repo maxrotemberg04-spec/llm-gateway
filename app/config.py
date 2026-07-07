@@ -1,4 +1,4 @@
-"""Gateway configuration — models, prices, limits. Mirrors my production app's locked backend.
+"""Gateway configuration — models, prices, limits.
 
 ⚠️ Prices are placeholders — set the real per-1M-token prices before trusting the
 cost numbers.
